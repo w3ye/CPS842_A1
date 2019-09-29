@@ -12,10 +12,6 @@ class Invert:
         return data
 
     def initDocHash(self):
-        
         return
-    
-    
-
 
 Invert().readDoc()
