@@ -2,27 +2,33 @@ import sys,os,re,time,math
 
 class Invert:
 
-    docHash = {}
+    docHash = {} 
     docNum = 0
-
+    token = {}
+    stop = []
+    tokenNum = 0
+    file = open("./test","w")
+    
+    def __init__(self):
+        self.initDocHash()
+        self.initToken()
+        self.stopwords()
+    
     #read all the content in cacm.all
     def readDoc(self):
         file = open("./cacm/cacm.all")
         data = file.read()
         file.close()
         return data
-
+    
     def initDocHash(self):
         data = self.readDoc()
-        file = open("./test","a")
         for i in data.split(".I"):
             if ".T\n" in i and ".W\n" in i:
                 docID = i.split()[0]
-                self.docHash[docID] = 1
-                self.docHas[docID] = self.appendAbstractTitle(i)
+                self.docHash[docID] = self.appendAbstractTitle(i).lower()
+                self.file.write(self.appendAbstractTitle(i).lower())
                 self.docNum += 1
-
-        file.close()
         return
 
     def appendAbstractTitle(self,data):
@@ -53,4 +59,39 @@ class Invert:
         return
 
 
-Invert().initDocHash()
+    #takes in the data from initDocHash and take out all words individually
+    def initFrequency(self, data):
+        temp = ""
+        temp = data.replace('\n',' ')
+        temp = re.sub('[^A-Za-z]+',' ',temp)
+        temp = temp.split()
+        for i in self.stop:
+            if i in temp:
+                temp.remove(i)
+        return temp
+    
+    def initToken(self):
+        for key,value in self.docHash.items():
+            for i in self.initFrequency(value):
+                if i in self.token:
+                    self.token[i] += 1
+                else:
+                    self.token[i] = 1
+                self.tokenNum += 1
+        return
+    
+    def dictionary(self):
+        file = open("./dictionary","w")
+        for i in sorted(self.token):
+            file.write("Word: "+i+"\tFrequency: "+str(self.token[i])+"\n")
+        file.close()
+        return
+
+    def stopwords(self):
+        file = open("./cacm/common_words","r")
+        self.file = open("./stopwordTest","w")
+        data = file.read()
+        temp = []
+        self.docHash.value().replace(' a ',' ')
+        self.file.write(self.docHash.value)
+Invert()
