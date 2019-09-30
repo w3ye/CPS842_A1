@@ -73,11 +73,6 @@ class Invert:
         self.file = open("./stopwordTest","w")
         data = file.read()
         temp = []
-        for i in data.split("\n"):
-            for key,value in self.docHash.items():
-                if ' '+i in value or ' ' + i + ' ' in value:
-                    value = re.sub(i,' ',value)
-                    self.file.write(value)
-        return
-
+        self.docHash.value().replace(' a ',' ')
+        self.file.write(self.docHash.value)
 Invert()
