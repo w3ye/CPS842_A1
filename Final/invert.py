@@ -12,7 +12,7 @@ class Invert:
     def __init__(self):
         self.initDocHash()
         self.initToken()
-        #self.dictionary()
+        self.stopwords()
     
     #read all the content in cacm.all
     def readDoc(self):
@@ -26,8 +26,8 @@ class Invert:
         for i in data.split(".I"):
             if ".T\n" in i and ".W\n" in i:
                 docID = i.split()[0]
-                self.docHash[docID] = self.appendAbstractTitle(i)
-                self.file.write(self.appendAbstractTitle(i))
+                self.docHash[docID] = self.appendAbstractTitle(i).lower()
+                self.file.write(self.appendAbstractTitle(i).lower())
                 self.docNum += 1
         return
 
@@ -66,6 +66,18 @@ class Invert:
         for i in sorted(self.token):
             file.write("Word: "+i+"\tFrequency: "+str(self.token[i])+"\n")
         file.close()
+        return
+
+    def stopwords(self):
+        file = open("./cacm/common_words","r")
+        self.file = open("./stopwordTest","w")
+        data = file.read()
+        temp = []
+        for i in data.split("\n"):
+            for key,value in self.docHash.items():
+                if ' '+i in value or ' ' + i + ' ' in value:
+                    value = re.sub(i,' ',value)
+                    self.file.write(value)
         return
 
 Invert()
