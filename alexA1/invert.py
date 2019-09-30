@@ -1,11 +1,5 @@
 import sys,os,re,time,math
 
-docNum = 0 #number of documents
-tokNum = 0 #number of tokens
-termNum = 0#number of terms
-tiNum = 0 #number of term index
-diNum = 0 #number of document index
-
 
 '''
 input the content of each book
@@ -43,12 +37,6 @@ def clean(content):
 '''
 formatting things in document to list format
 
-.I
-123 (document ID)
-.T
-apple.2.34-46 (term.tf.firstpos-secondpos-thirdpos-...)
-bad.1.1
-
 postings structure
 {
 	"docID":[
@@ -57,20 +45,18 @@ postings structure
 		]
 }
 
-
-NOT DONE YET
-
 '''
 def form(content):
 	ct=content.replace('\nT\n',' ').replace('\nW\n',' ')
 	terms = {}
-	counter = 0
-	for t in ct.split():
-		counter +=1
-		if t in terms and t not in stop:
-			terms[t].append(counter)
-		else:
-			terms[t] = [str(counter)]
+	occurrence = 0
+	for t in clean(ct):
+		occurrence +=1
+		if t not in stop:
+			if t in terms:
+				terms[t].append(occurrence)
+			else:
+				terms[t] = [occurrence]
 	return terms
 
 #->
@@ -87,6 +73,8 @@ files = open("./cacmoriginal/cacm.all","r")# open the file
 data = files.read()
 
 docs = {} #the dictionary hashmap for data storage
+docNum = 0 #number of documents
+
 for f in data.split("\n.I"):
 	#we only need document ID, title and abstract from the document
 	if ".T\n" in f and ".W\n" in f:
@@ -97,30 +85,63 @@ files.close()
 
 #->
 tokens = {} #all tokens/terms in all valid documents
+tokNum = 0 #number of tokens
+
 for key,value in docs.items():
 	for t in clean(value):
-		if t in tokens:
-			tokens[t]+=1
-		else:
-			tokens[t]=1
+		if t.lower() not in stop:
+			if t in tokens:
+				tokens[t]+=1
+			else:
+				tokens[t]=1
 		tokNum+=1
 
-#->NOT DONE YET
-postings = {}
-for doc in docs:
-	postings[doc]=form(docs[doc])
-
+#->postings ordered by documentID
+postingDoc = {}
+for doc in docs.keys():
+	postingDoc[doc]=form(docs[doc])
 
 #->
 #print dctionary document
 dictionary = open("./dictionary","w")
 for key in sorted(tokens):
-	dictionary.write("TERM:"+key+"FREQUENCY:"+str(tokens[key])+"\n")
+	dictionary.write(key+"&"+str(tokens[key])+"\n")
 dictionary.close()
 
-#print the posting document
-#NOT DONE YET only prints every valid info from each document right now
-#waiting for form method to be done
-postings = open("./postings","w")
-for key,value in docs.items():
-	postings.write(key + docs[key])
+
+#->
+#NEED MODIFICATION
+postD = open("./postingDoc.txt","w")
+
+for postDkey,postDvalue in postingDoc.items():
+	postD.write("Document ID:"+postDkey+" \n")
+	for k,v in postDvalue.items():
+		postD.write("Term:"+k)
+		postD.write(" Frequency:"+str(len(v)))
+		postD.write(" Postings:"+''.join(str(e)+"-" for e in v)+"\n")
+postD.close()
+
+'''
+postings in the order of terms
+{
+	"term":[
+		{doc1:[pos1,pos2]},
+		{doc2:[pos2,pos2,pos3]}
+	],
+	"term2":[...]
+}
+'''
+postingTerm = {}
+for key in tokens.keys():
+	postingTerm[key]=[]#initializing the postings in order of terms
+
+for keyID,termList in postingDoc.items():
+	for t in termList:
+		if t in postingTerm.keys():
+			tempMap = {keyID:termList[t]}
+			postingTerm[t].append(tempMap)
+
+#->
+postT = open("./postingTerm.txt","w")
+
+print(type(postingTerm))
