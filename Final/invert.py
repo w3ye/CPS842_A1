@@ -7,10 +7,12 @@ class Invert:
     token = {}
     stop = []
     tokenNum = 0
+    file = open("./test","w")
     
     def __init__(self):
         self.initDocHash()
         self.initToken()
+        #self.dictionary()
     
     #read all the content in cacm.all
     def readDoc(self):
@@ -25,6 +27,7 @@ class Invert:
             if ".T\n" in i and ".W\n" in i:
                 docID = i.split()[0]
                 self.docHash[docID] = self.appendAbstractTitle(i)
+                self.file.write(self.appendAbstractTitle(i))
                 self.docNum += 1
         return
 
@@ -49,9 +52,19 @@ class Invert:
         return temp
     
     def initToken(self):
-        file = open("./test","w")
         for key,value in self.docHash.items():
-            file.write(value+"\n")
+            for i in self.initFrequency(value):
+                if i in self.token:
+                    self.token[i] += 1
+                else:
+                    self.token[i] = 1
+                self.tokenNum += 1
+        return
+    
+    def dictionary(self):
+        file = open("./dictionary","w")
+        for i in sorted(self.token):
+            file.write("Word: "+i+"\tFrequency: "+str(self.token[i])+"\n")
         file.close()
         return
 
