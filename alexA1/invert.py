@@ -1,147 +1,111 @@
-import sys,os,re,time,math
-
+import sys,os,re,math
 
 '''
-input the content of each book
-and returns only title and abstract of the book like the following:
-
+//input the raw content of each book
 .W
-blahblah blha
+blah blahblha
 .T
-blah
+bla bbb
+
+//and return as a list of size 2
+[abstract,title]
+'''
+def filt(raw):
+	parts = raw.split("\n.")#split categories like abstracts, titles etc.
+	temp = []
+	for part in parts:
+		part = "\n"+part
+		if "\nW\n" in part:
+			temp.append(part.replace("\nW\n",""))
+		elif "\nT\n" in part:
+			temp.append(part.replace("\nT\n",""))
+	if len(temp)==1:temp.append(" ")#in case one of the title or abstract is empty but .T/.W is still there
+	return temp
 
 '''
-def fil(content):
-	lines=content.split("\n.")
-	re = ""
-	for line in lines:
-		line = "\n"+line
-		if "\nW\n" in line or "\nT\n" in line:
-			re+=line#only append the abstract and the title part
-	return re
-
+the clean function removes all non letters and nextlines
 '''
-clean the given content and return a string with only letters
-'''
-def clean(content):
-	temp = ""	
-	temp = content.replace('\n',' ')
-	temp = re.sub('[^A-Za-z]+', ' ', temp)
+def clean(raw):
+	temp = raw.replace("\n"," ")
+	temp = re.sub('[^A-Za-z]+',' ',temp)
 	temp = temp.split()
-	for t in stop:
-		if t in temp:
-			temp.remove(t)
+	for t in stopwords:
+		if t in temp: temp.remove(t)
 	return temp
 	
-
 '''
-formatting things in document to list format
+search over all valid documents for a certain term
+returns a list of maps for each term
 
-postings structure
-{
-	"docID":[
-			{"term1":["pos1","pos2"]},
-			{"term2":["pos1"]}
-		]
-}
-
+"term":[
+	{doc1:[pos1,pos2,pos3]}
+	{doc2:[pos2]}
+]
 '''
-def form(content):
-	ct=content.replace('\nT\n',' ').replace('\nW\n',' ')
-	terms = {}
-	occurrence = 0
-	for t in clean(ct):
-		occurrence +=1
-		if t not in stop:
-			if t in terms:
-				terms[t].append(occurrence)
-			else:
-				terms[t] = [occurrence]
-	return terms
+def post(target):
+	temp = []
+	for docID,docVal in docs.items():
+		if target in clean(docVal[0]+docVal[1]):
+			temp.append({docID:getPos(target,clean(docVal[0]+docVal[1]))})
+	return temp
+
+def getPos(term,val):
+	pos = []
+	count = 0
+	for t in val:
+		count+=1
+		if term == t: pos.append(count)
+	return pos
 
 #->
-stopwords = open("./stopwords.txt","r")
-s = stopwords.read()
-stop = []#all the stop words to ignore
+stopwordFile = open("./cacm/common_words","r")
+s = stopwordFile.read()
+stopwords = []#list to store all the obmitting words
 
 for w in s.split():
-	stop.append(w)
-stopwords.close()
+	stopwords.append(w)
+stopwordFile.close()
 
 #->
-files = open("./cacmoriginal/cacm.all","r")# open the file
+files = open("./cacm/cacm.all","r")
 data = files.read()
 
-docs = {} #the dictionary hashmap for data storage
-docNum = 0 #number of documents
+docs = {}#the dictionary hashmap for valid content of each book
 
 for f in data.split("\n.I"):
 	#we only need document ID, title and abstract from the document
 	if ".T\n" in f and ".W\n" in f:
-		docID = f.split()[0]#First line after .I is the docID
-		docs[docID]=fil(f)#filter only title and abstract
-		docNum+=1
+		docID = f.split()[0]#first thing after .I is document ID
+		docs[docID] = filt(f)#filter only title and abstract
 files.close()
 
 #->
-tokens = {} #all tokens/terms in all valid documents
-tokNum = 0 #number of tokens
-
-for key,value in docs.items():
-	for t in clean(value):
-		if t.lower() not in stop:
-			if t in tokens:
-				tokens[t]+=1
-			else:
-				tokens[t]=1
-		tokNum+=1
-
-#->postings ordered by documentID
-postingDoc = {}
-for doc in docs.keys():
-	postingDoc[doc]=form(docs[doc])
+tokens = {}
+for docID,docVal in docs.items():
+	for term in clean(docVal[0]+docVal[1]):
+		if term.lower() not in stopwords:
+			if term in tokens: tokens[term]+=1
+			else: tokens[term]=1
 
 #->
-#print dctionary document
+postings = {}
+for t in sorted(tokens):
+	postings[t]=post(t)#
+
+#->print dictionary document
 dictionary = open("./dictionary","w")
-for key in sorted(tokens):
-	dictionary.write(key+"&"+str(tokens[key])+"\n")
+for t in sorted(tokens):
+	dictionary.write(t+"&"+str(tokens[t])+"\n")
 dictionary.close()
 
+#->print postings document
+posting = open("./posting","w")
+for t,v in posting.items():
+	posting.write("\n?"+t)
+	for d in v:
+		posting.write("!"+d)
+		for p in v[d]:
+			posting.write("-"+p)
 
 #->
-#NEED MODIFICATION
-postD = open("./postingDoc.txt","w")
-
-for postDkey,postDvalue in postingDoc.items():
-	postD.write("Document ID:"+postDkey+" \n")
-	for k,v in postDvalue.items():
-		postD.write("Term:"+k)
-		postD.write(" Frequency:"+str(len(v)))
-		postD.write(" Postings:"+''.join(str(e)+"-" for e in v)+"\n")
-postD.close()
-
-'''
-postings in the order of terms
-{
-	"term":[
-		{doc1:[pos1,pos2]},
-		{doc2:[pos2,pos2,pos3]}
-	],
-	"term2":[...]
-}
-'''
-postingTerm = {}
-for key in tokens.keys():
-	postingTerm[key]=[]#initializing the postings in order of terms
-
-for keyID,termList in postingDoc.items():
-	for t in termList:
-		if t in postingTerm.keys():
-			tempMap = {keyID:termList[t]}
-			postingTerm[t].append(tempMap)
-
-#->
-postT = open("./postingTerm.txt","w")
-
-print(type(postingTerm))
+print(docs["2919"][1])
