@@ -26,13 +26,12 @@ def filt(raw):
 the clean function removes all non letters and nextlines
 '''
 def clean(raw):
-	temp = raw.replace("\n"," ")
-	temp = re.sub('[^A-Za-z]+',' ',temp)
-	temp = temp.split()
-	for t in stopwords:
-		if t in temp: temp.remove(t)
-	return temp
-	
+	temp = " ".join(raw)#raw is a list of two string elements
+	temp.replace("\n"," ")#put everything in the same line
+	words = re.sub('[^A-Za-z]+',' ',temp)#change all the non-letters to space
+	wordList = set(words.lower().split()) - set(stopwords)#--->removes stopwords from list<---
+	return wordList
+
 '''
 search over all valid documents for a certain term
 returns a list of maps for each term
@@ -42,36 +41,31 @@ returns a list of maps for each term
 	{doc2:[pos2]}
 ]
 '''
-def post(target):
+def getPost(target):
 	temp = []
-	for docID,docVal in docs.items():
-		if target in clean(docVal[0]+docVal[1]):
-			temp.append({docID:getPos(target,clean(docVal[0]+docVal[1]))})
+	#for docID,docVal in rawDocs.items():
+		#positions = [str(index+1) for index,value in enumerate(docVal) if target in value]
+		#temp.append({docID:positions})
 	return temp
 
-def getPos(term,val):
-	pos = []
-	count = 0
-	for t in val:
-		count+=1
-		if term == t: pos.append(count)
-	return pos
-
 #->
-stopwordFile = open("./cacm/common_words","r")
-s = stopwordFile.read()
+
+stop = "y"
 stopwords = []#list to store all the obmitting words
 
-for w in s.split():
-	stopwords.append(w)
-stopwordFile.close()
+if stop == "y":
+	stopwordFile = open("./cacm/common_words","r")
+	s = stopwordFile.read()
+
+	for w in s.split():
+		stopwords.append(w)
+	stopwordFile.close()
 
 #->
 files = open("./cacm/cacm.all","r")
 data = files.read()
 
 docs = {}#the dictionary hashmap for valid content of each book
-
 for f in data.split("\n.I"):
 	#we only need document ID, title and abstract from the document
 	if ".T\n" in f and ".W\n" in f:
@@ -79,18 +73,20 @@ for f in data.split("\n.I"):
 		docs[docID] = filt(f)#filter only title and abstract
 files.close()
 
+
 #->
 tokens = {}
+rawDocs = {}
 for docID,docVal in docs.items():
-	for term in clean(docVal[0]+docVal[1]):
-		if term.lower() not in stopwords:
-			if term in tokens: tokens[term]+=1
-			else: tokens[term]=1
+	rawDocs[docID] = list(clean(docVal))
+	for term in clean(docVal):
+		if term in tokens: tokens[term]+=1
+		else: tokens[term]=1
 
 #->
 postings = {}
 for t in sorted(tokens):
-	postings[t]=post(t)#
+	postings[t]=getPost(t)
 
 #->print dictionary document
 dictionary = open("./dictionary","w")
@@ -99,6 +95,8 @@ for t in sorted(tokens):
 dictionary.close()
 
 #->print postings document
+print(postings)
+'''
 posting = open("./posting","w")
 for t,v in posting.items():
 	posting.write("\n?"+t)
@@ -107,5 +105,7 @@ for t,v in posting.items():
 		for p in v[d]:
 			posting.write("-"+p)
 
+'''
+
 #->
-print(docs["2919"][1])
+#print(docs[docs.keys()[0]])
