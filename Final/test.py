@@ -10,9 +10,13 @@ termNfrequency = dictionary.read()
 
 #->
 posting = open("./posting","r")
-termNposting = postingT.read()
+termNposting = posting.read()
+
+posting.close()
+dictionary.close()
 
 
+#->
 stop = ""
 while stop.lower() != "n" and stop.lower() != "y":
   stop = input("Would you like to use stopwords?(N/Y)")
