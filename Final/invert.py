@@ -72,7 +72,11 @@ class Invert:
         file = open("./cacm/common_words","r")
         self.file = open("./stopwordTest","w")
         data = file.read()
-        temp = []
-        self.docHash.value().replace(' a ',' ')
-        self.file.write(self.docHash.value)
+        for i in data.split("\n"):
+            for key,value in self.docHash.items():
+                if  i in value:
+                    j = len(value)
+                    temp = value.replace(" "+i+" "," ",j)
+                    self.file.write(temp)
+        return
 Invert()
