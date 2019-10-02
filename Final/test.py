@@ -1,4 +1,8 @@
 import sys,os,re,time
+#if without class you can just def a main function which triggers other functions such as initDoc or initPosting
+from invert import main
+#if you have set up main class, then just simply import the whole document
+import invert
 
 def test(term)
   return "searching for term related content"
