@@ -1,97 +1,93 @@
 import sys,os,re,time,math
 
-class Invert:
+class main:
+	docHash = {}
+	rawdocHash = {}
+	tokenHash = {}
+	stopwords = []
+	def __init__(self,algorithm,stop):
+		if stop.lower() == "y": self.getStop()
+		if algorithm.lower() == "y": self.usePorterStemming()
+		self.initDoc()
+		self.initToken()
+		self.writeOut()
 
-    docHash = {} 
-    docNum = 0
-    token = {}
-    stop = []
-    tokenNum = 0
-    file = open("./test","w")
-    
-    def __init__(self):
-        self.initDocHash()
-        self.initToken()
-        self.stopwords()
-    
-    #read all the content in cacm.all
-    def readDoc(self):
-        file = open("./cacm/cacm.all")
-        data = file.read()
-        file.close()
-        return data
-    
-    def initDocHash(self):
-        data = self.readDoc()
-        for i in data.split(".I"):
-            if ".T\n" in i and ".W\n" in i:
-                docID = i.split()[0]
-                self.docHash[docID] = self.appendAbstractTitle(i).lower()
-                self.file.write(self.appendAbstractTitle(i).lower())
-                self.docNum += 1
-        return
+	def readDoc(self,docName):
+		#helper function for reading document data to avoid duplicte
+		file = open(docName,"r")
+		data = file.read()
+		file.close()
+		return data
 
-    def appendAbstractTitle(self,data):
-        line = data.split("\n.")
-        temp = ""
-        for l in line:
-            l = "\n"+ l
-            if "\nW\n" in l or "\nT\n" in l:
-                temp += l
-        return temp
-    
-    #takes in the data from initDocHash and take out all words individually
-    def initFrequency(self, data):
-        temp = ""
-        temp = data.replace('\n',' ')
-        temp = re.sub('[^A-Za-z]+',' ',temp)
-        temp = temp.split()
-        for i in self.stop:
-            if i in temp:
-                temp.remove(i)
-        return temp
-    
-    def initToken(self):
-        file = open("./test","w")
-        for key,value in self.docHash.items():
-            file.write(value+"\n")
-        file.close()
-        return
+	def initDoc(self):
+		'''
+		This functions reads all documents from file
+		Each file is separated by \n.I
+		File content is only validated and stored if it has both abstract and title
+		The content is filtered as a list
+		value[0] is abstract and value[1] is title
+		'''
+		data = self.readDoc("./cacm/cacm.all")
+		for f in data.split("\n.I"):
+			if ".T\n" in f and ".W\n" in f:
+				docID = f.split()[0]
+				self.docHash[docID] = self.filt(f)
+	
+
+	def filt(self,raw):
+		'''
+		//input the raw content of each book
+		.W
+		blah blahblha
+		.T
+		bla bbb
+		//and return as a list of size 2
+		[abstract,title]
+		'''
+		parts = raw.split("\n.")#split categories like abstracts, titles etc.
+		temp = []
+		for part in parts:
+			part = "\n"+part
+			if "\nW\n" in part:
+				temp.append(part.replace("\nW\n",""))
+			elif "\nT\n" in part:
+				temp.append(part.replace("\nT\n",""))
+		if len(temp)==1:temp.append(" ")#in case one of the title or abstract is empty but .T/.W is still there
+		return temp
 
 
-    #takes in the data from initDocHash and take out all words individually
-    def initFrequency(self, data):
-        temp = ""
-        temp = data.replace('\n',' ')
-        temp = re.sub('[^A-Za-z]+',' ',temp)
-        temp = temp.split()
-        for i in self.stop:
-            if i in temp:
-                temp.remove(i)
-        return temp
-    
-    def initToken(self):
-        for key,value in self.docHash.items():
-            for i in self.initFrequency(value):
-                if i in self.token:
-                    self.token[i] += 1
-                else:
-                    self.token[i] = 1
-                self.tokenNum += 1
-        return
-    
-    def dictionary(self):
-        file = open("./dictionary","w")
-        for i in sorted(self.token):
-            file.write("Word: "+i+"\tFrequency: "+str(self.token[i])+"\n")
-        file.close()
-        return
+	def clean(self,raw):
+		#the cleaning function that removes all non letters or nextlines
+		temp = " ".join(raw)#raw is a list of two string elements
+		temp.replace("\n"," ")#put everything in the same line
+		words = re.sub('[^A-Za-z]+',' ',temp)#change all the non-letters to space
+		wordList = set(words.lower().split()) - set(self.stopwords)#--->removes stopwords from list<---
+		return wordList
 
-    def stopwords(self):
-        file = open("./cacm/common_words","r")
-        self.file = open("./stopwordTest","w")
-        data = file.read()
-        temp = []
-        self.docHash.value().replace(' a ',' ')
-        self.file.write(self.docHash.value)
-Invert()
+
+	def initToken(self):
+		'''
+		This function initilizes tokens
+		storing all unique tokens in a hashmap
+		and storing all raw(valid terms only) docs in a dashmap
+		'''
+		for docID, docVal in self.docHash.items():
+				self.rawdocHash[docID] = list(self.clean(docVal))
+				for term in self.clean(docVal):
+					if term in self.tokenHash: self.tokenHash[term]+=1
+					else: self.tokenHash[term]=1
+	def writeOut(self):
+		#write dictionary to file in order of terms
+		dictionary = open("./dictionary","w")
+		for t in sorted(self.tokenHash):
+			dictionary.write(t+"&"+str(self.tokenHash[t])+"\n")
+		dictionary.close()
+		#write postings to file in order of terms
+
+	def getStop(self):
+		#read common words into stopwords list when necessary
+		data = self.readDoc("./cacm/common_words")
+		for w in data.split():
+			self.stopwords.append(w)
+
+	
