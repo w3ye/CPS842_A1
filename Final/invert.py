@@ -1,4 +1,5 @@
 import sys,os,re,time,math
+#import nltk
 
 class main:
 	docHash = {}
@@ -127,4 +128,4 @@ class main:
 		for w in data.split():
 			self.stopwords.append(w)
 
-	
+
