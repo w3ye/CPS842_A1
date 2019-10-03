@@ -5,11 +5,13 @@ class main:
 	rawdocHash = {}
 	tokenHash = {}
 	stopwords = []
+	postingHash = {}
 	def __init__(self,algorithm,stop):
 		if stop.lower() == "y": self.getStop()
 		if algorithm.lower() == "y": self.usePorterStemming()
 		self.initDoc()
 		self.initToken()
+		self.initPosting()
 		self.writeOut()
 
 	def readDoc(self,docName):
@@ -76,6 +78,34 @@ class main:
 				for term in self.clean(docVal):
 					if term in self.tokenHash: self.tokenHash[term]+=1
 					else: self.tokenHash[term]=1
+
+	def initPosting(self):
+		'''
+		'''
+		for terms in sorted(self.tokenHash):
+			self.postingHash[terms]={}
+			for docID,wordList in self.rawdocHash.items():
+				if terms in wordList:
+					positions = [str(index+1) for index,value in enumerate(wordList) if terms in value]
+					self.postingHash[terms][docID]=positions
+
+	def getPost(self,target):
+		'''
+		search over all valid documents for a certain term
+		returns a list of maps for each term
+
+		"term":[
+			{doc1:[pos1,pos2,pos3]}
+			{doc2:[pos2]}
+		]
+		'''
+		temp = []
+		for docID,docVal in self.rawdocHash.items():
+			positions = [str(index+1) for index,value in enumerate(docVal) if target in value]
+		temp.append[{docID:positions}]
+		return temp
+		
+	
 	def writeOut(self):
 		#write dictionary to file in order of terms
 		dictionary = open("./dictionary","w")
@@ -83,6 +113,13 @@ class main:
 			dictionary.write(t+"&"+str(self.tokenHash[t])+"\n")
 		dictionary.close()
 		#write postings to file in order of terms
+		posting = open("./posting","w")
+		for term,docList in self.postingHash.items():
+			posting.write("\n?"+term)
+			for docID,positions in docList.items():
+				posting.write(">"+str(docID))
+				for p in positions:
+					posting.write("-"+str(p))
 
 	def getStop(self):
 		#read common words into stopwords list when necessary
