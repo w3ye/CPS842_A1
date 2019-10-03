@@ -1,5 +1,6 @@
 import sys,os,re,time,math
-#import nltk
+import nltk
+from nltk.stem import PorterStemmer
 
 class main:
 	docHash = {}
@@ -9,9 +10,8 @@ class main:
 	postingHash = {}
 	def __init__(self,algorithm,stop):
 		if stop.lower() == "y": self.getStop()
-		if algorithm.lower() == "y": self.usePorterStemming()
 		self.initDoc()
-		self.initToken()
+		self.initToken(algorithm.lower())
 		self.initPosting()
 		self.writeOut()
 
@@ -68,15 +68,17 @@ class main:
 		return wordList
 
 
-	def initToken(self):
+	def initToken(self,use):
 		'''
 		This function initilizes tokens
 		storing all unique tokens in a hashmap
 		and storing all raw(valid terms only) docs in a dashmap
 		'''
+		ps = PorterStemmer()
 		for docID, docVal in self.docHash.items():
 				self.rawdocHash[docID] = list(self.clean(docVal))
 				for term in self.clean(docVal):
+					if use == "y": term = ps.stem(term)
 					if term in self.tokenHash: self.tokenHash[term]+=1
 					else: self.tokenHash[term]=1
 
@@ -127,5 +129,4 @@ class main:
 		data = self.readDoc("./cacm/common_words")
 		for w in data.split():
 			self.stopwords.append(w)
-
 
