@@ -2,6 +2,21 @@ import sys,os,re,time,math
 import nltk
 from nltk.stem import PorterStemmer
 
+'''
+New data strcture for dictionary and postings
+dictionary postings
+term | frequency -> docid | frequency | positions
+		 -> docid | frequency | positions
+
+{
+[t1_totalN]:[
+		[doc1,n1,pos1,pos2,pos....],
+		[],
+		[]
+	]
+}
+'''
+
 class main:
 	docHash = {}
 	rawdocHash = {}
@@ -72,7 +87,7 @@ class main:
 		'''
 		This function initilizes tokens
 		storing all unique tokens in a hashmap
-		and storing all raw(valid terms only) docs in a dashmap
+		and storing all raw(valid terms only) docs in a hashmap
 		'''
 		ps = PorterStemmer()
 		for docID, docVal in self.docHash.items():
@@ -83,29 +98,27 @@ class main:
 					else: self.tokenHash[term]=1
 
 	def initPosting(self):
-		'''
-		'''
-		for terms in sorted(self.tokenHash):
-			self.postingHash[terms]={}
-			for docID,wordList in self.rawdocHash.items():
-				if terms in wordList:
-					positions = [str(index+1) for index,value in enumerate(wordList) if terms in value]
-					self.postingHash[terms][docID]=positions
+		for terms in self.tokenHash:
+			dic = terms + " " + str(self.tokenHash[terms])
+			self.postingHash[dic]=self.getPost(terms)
 
 	def getPost(self,target):
 		'''
 		search over all valid documents for a certain term
 		returns a list of maps for each term
 
-		"term":[
-			{doc1:[pos1,pos2,pos3]}
-			{doc2:[pos2]}
+		return a list of docs
+		[
+			[doc1,2,pos1,pos2]
+			[doc2,3,pos1,pos2,pos3]
 		]
 		'''
 		temp = []
 		for docID,docVal in self.rawdocHash.items():
-			positions = [str(index+1) for index,value in enumerate(docVal) if target in value]
-		temp.append[{docID:positions}]
+			#positions = [str(index+1) for index,value in enumerate(docVal) if target in value]
+			if target in docVal:
+				positions = [str(index+1) for index,value in enumerate(docVal) if target == value]
+				temp.append([docID,len(positions)] + positions)
 		return temp
 		
 	
@@ -117,12 +130,17 @@ class main:
 		dictionary.close()
 		#write postings to file in order of terms
 		posting = open("./posting","w")
-		for term,docList in self.postingHash.items():
+		for term in sorted(self.postingHash):
+			posting.write(term + " : " + str(self.postingHash[term]) + "\n")
+		#for term,docList in self.postingHash.items():
+		#posting.write(term + " | " + str(docList))
+			'''
 			posting.write("\n?"+term)
 			for docID,positions in docList.items():
 				posting.write(">"+str(docID))
 				for p in positions:
 					posting.write("-"+str(p))
+			'''
 
 	def getStop(self):
 		#read common words into stopwords list when necessary
