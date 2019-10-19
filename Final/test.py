@@ -24,7 +24,9 @@ while st.lower() != "n" and st.lower() != "y":
 ps = ""
 while ps.lower() != "n" and ps.lower() != "y":
 	ps = raw_input("Would you like to use Porter Stemming Algorithm?(N/Y)")
-print("got it")
+print("preparing...")
+
+tester = invert.main(ps,st)
 
 required = raw_input("What term are you searching for?")
 while required != "ZZEND":
@@ -33,11 +35,16 @@ while required != "ZZEND":
 	start = time.time()
 
 	#----------------------------------------
-	tester = invert.main(ps,st)
-	#term = re.sub('[^A-Za-z]+','',required)#remove unnecessary characters
-	if required in tester.postingHash.keys():
-		print("The term shows in: " + str(tester.postingHash[required]))
-	else: print("Term Not Found!")
+	found = False
+	for key,content in tester.postingHash.items():
+		if required == key.split()[0]:
+			found = True
+			print("The term shows up: " + key.split()[1] +"times.\n")
+			print("Sample article: \n" + tester.docHash[content[0][0]][0] + tester.docHash[content[0][0]][1] + "\n")
+			print("All positions: ")
+			for doc in content:
+				print(str(doc) + "\n")
+	if not found: print("Term: "+ required +"NOT FOUND!\n")
 	#----------------------------------------
 
 	end = time.time()
