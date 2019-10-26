@@ -23,11 +23,13 @@ class main:
 	tokenHash = {}
 	stopwords = []
 	postingHash = {}
+	tfHash = {}
 	def __init__(self,algorithm,stop):
 		if stop.lower() == "y": self.getStop()
 		self.initDoc()
 		self.initToken(algorithm.lower())
 		self.initPosting()
+		self.initTfs()
 		self.writeOut()
 
 	def readDoc(self,docName):
@@ -98,9 +100,10 @@ class main:
 					else: self.tokenHash[term]=1
 
 	def initPosting(self):
-		for terms in self.tokenHash:
+		for terms in self.tokenHash.keys():
 			dic = terms + " " + str(self.tokenHash[terms])
 			self.postingHash[dic]=self.getPost(terms)
+			
 
 	def getPost(self,target):
 		'''
@@ -130,21 +133,29 @@ class main:
 		dictionary.close()
 		#write postings to file in order of terms
 		posting = open("./posting","w")
-		for term in sorted(self.postingHash):
-			posting.write(term + " : " + str(self.postingHash[term]) + "\n")
-		#for term,docList in self.postingHash.items():
-		#posting.write(term + " | " + str(docList))
-			'''
-			posting.write("\n?"+term)
-			for docID,positions in docList.items():
-				posting.write(">"+str(docID))
-				for p in positions:
-					posting.write("-"+str(p))
-			'''
+		for term in self.postingHash:
+			posting.write(str(term) + " : " + str(self.postingHash[term]) + "\n")
+		#write tfs
+		termfrequency = open("./tfs","w")
+		for d,f in self.tfHash.items():
+			termfrequency.write("docID: " + str(d) + "frequency: " + str(f) + "\n")
 
 	def getStop(self):
 		#read common words into stopwords list when necessary
 		data = self.readDoc("./cacm/common_words")
 		for w in data.split():
 			self.stopwords.append(w)
-
+	def initTfs(self):
+		"""calculated terms frequencies for all docs and terms
+		{docID: [f1,f2,f3 ..... fn]}
+		n same size as tokenHash for corresponding tokens
+		"""
+		for docID, docVal in self.rawdocHash.items():
+			dfs = []
+			for t,f in self.tokenHash.items():
+				#if t not in docVal: dfs.append(0)
+				#else:
+				if t in docVal:
+					for docs in self.postingHash[str(t) + " " + str(f)]:
+						if docs[0] == docID: dfs.append(1 + math.log(docs[1]))
+			self.tfHash[docID] = dfs

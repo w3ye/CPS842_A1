@@ -1,19 +1,6 @@
 import sys,os,math,time
 import invert
 
-'''
-#->dictionary file as input
-dictionary = open("./dictionary","r")
-termNfrequency = dictionary.read()
-
-#->posting file as input
-posting = open("./posting","r")
-termNposting = posting.read()
-
-posting.close()
-dictionary.close()
-'''
-
 
 #--------------------------------
 #->asking for user input
@@ -39,11 +26,10 @@ while required != "ZZEND":
 	for key,content in tester.postingHash.items():
 		if required == key.split()[0]:
 			found = True
-			print("The term shows up: " + key.split()[1] +"times.\n")
-			print("Sample article: \n" + tester.docHash[content[0][0]][0] + tester.docHash[content[0][0]][1] + "\n")
-			print("All positions: ")
+			print("TF = " + key.split()[1] +".")
+			#print("Sample article: \n" + tester.docHash[content[0][0]][0] + tester.docHash[content[0][0]][1] + "\n")
 			for doc in content:
-				print(str(doc) + "\n")
+				print("DocID: " + str(doc[0]) + ". DF = " + str(doc[1]))
 	if not found: print("Term: "+ required +"NOT FOUND!\n")
 	#----------------------------------------
 
