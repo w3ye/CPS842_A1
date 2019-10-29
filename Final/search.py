@@ -11,22 +11,22 @@ while st.lower() != "n" and st.lower() != "y":
 ps = ""
 while ps.lower() != "n" and ps.lower() != "y":
 	ps = raw_input("Would you like to use Porter Stemming Algorithm?(N/Y)")
-print("preparing...")
 
-tester = invert.main(ps,st)
+
 
 required = raw_input("What term are you searching for?")
 while required != "ZZEND":
 	#the loop will keep running untill the user say ZZEND
 	print("Searhing for: "+required)
 	start = time.time()
-
+	print("preparing...")
+	tester = invert.main(ps,st)
 	#----------------------------------------
 	found = False
 	for key,content in tester.postingHash.items():
-		if required == key.split()[0]:
+		if required == key:
 			found = True
-			print("TF = " + key.split()[1] +".")
+			print("TF = " + str(tester.tokenHash[key]) +".")
 			#print("Sample article: \n" + tester.docHash[content[0][0]][0] + tester.docHash[content[0][0]][1] + "\n")
 			for doc in content:
 				print("DocID: " + str(doc[0]) + ". DF = " + str(doc[1]))
