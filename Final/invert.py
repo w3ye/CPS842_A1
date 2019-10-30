@@ -18,15 +18,20 @@ term | frequency -> docid | frequency | positions
 '''
 
 class main:
+	rawdocHash = {}
 	docHash = {}
 	tokenHash = {}
 	stopwords = []
 	postingHash = {}
 	weightHash = {}
+	queryList = []
+	queryWeight = {}
+	stem = ""
 	def __init__(self,algorithm,stop):
 		if stop.lower() == "y": self.getStop()
+		self.stem = algorithm.lower()
 		self.initDoc()
-		self.initToken(algorithm.lower())
+		self.initToken()
 		self.initPosting()
 		self.initWeights()
 		self.writeOut()
@@ -49,10 +54,11 @@ class main:
 		for f in data.split("\n.I"):
 			if ".T\n" in f and ".W\n" in f:
 				docID = f.split()[0]
-				self.docHash[docID] = self.filt(f)
+				self.docHash[docID] = self.tokenize(f)
+				self.rawdocHash[docID] = self.filt(f)
 	
 
-	def filt(self,raw):
+	def tokenize(self,raw):
 		'''
 		//input the raw content of each book
 		.W
@@ -71,6 +77,15 @@ class main:
 				temp = temp + part.replace("\nT\n"," ")
 		return self.clean(temp)
 
+	def filt(self,raw):
+		'''split each part by .^?
+		'''
+		re = {}
+		for block in raw.split("\n."):
+			if block[0] == 'T': re["title"] = block
+			if block[0] == 'W': re["content"] = block
+			if block[0] == 'A': re["author"] = block
+		return re
 
 	def clean(self,raw):
 		#the cleaning function that removes all non letters or nextlines
@@ -80,7 +95,7 @@ class main:
 		return wordList
 
 
-	def initToken(self,use):
+	def initToken(self):
 		'''
 		This function initilizes tokens
 		storing all unique tokens in a hashmap
@@ -89,7 +104,7 @@ class main:
 		ps = PorterStemmer()
 		for docVal in self.docHash.values():
 				for term in docVal:
-					if use == "y": term = ps.stem(term)
+					if self.stem == "y": term = ps.stem(term)
 					if term in self.tokenHash: self.tokenHash[term]+=1
 					else: self.tokenHash[term]=1
 
@@ -133,7 +148,7 @@ class main:
 		for d,f in self.weightHash.items():
 			termfrequency.write("docID: " + str(d) + " tfs: " + str(f) + "\n")
 		#write raw docs
-		f = open("./rawdocs","w")
+		f = open("./docs","w")
 		for i,l in self.docHash.items():
 			f.write(i + " :\n"+ str(l) + "\n")
 
@@ -150,17 +165,6 @@ class main:
 
 	def getWeight(self,ls1,ls2):
 		'''calculate similarity between two lists: tfs and idfs
-		
-		dot = 0.0
-		len1 = 0.0
-		for x in ls1:
-			len1 += x**2
-			for y in ls2:
-				dot += x*y
-		len2 = 0.0
-		for y in ls2:
-			len2 += y**2
-		return dot / (math.sqrt(len1)*math.sqrt(len2))
 		'''
 		weights = []
 		for i in range(len(ls1)):
@@ -174,11 +178,11 @@ class main:
 		'''
 		print("initializing document weights")
 		n = len(self.tokenHash.keys())
-		print(n)
 		#
 		idfs = []
-		for t,f in self.postingHash.items():
-			idfs.append(math.log(n/len(f)))
+		for f in self.postingHash.values():
+			if len(f)==0: idfs.append(0)
+			else: idfs.append(math.log(n/len(f)))
 		#
 		for docID, docVal in self.docHash.items():
 			tfs = []
@@ -186,6 +190,50 @@ class main:
 				if t not in docVal: tfs.append(0)
 				else:
 					for docs in f:
-						if docs[0] == docID: tfs.append(1 + math.log(docs[1]))
+						if docs[0] == str(docID): tfs.append(1 + math.log(docs[1]))
 			self.weightHash[docID] = self.getWeight(tfs,idfs)
+
+	def generateQuery(self,required):
+		'''tokenize query to list of terms
+		'''
+		self.queryList = self.clean(required)
+		if self.stem == "y":
+			ps = PorterStemmer()
+			for q in self.queryList:
+				q = ps.stem(q)
+		for t in self.queryList:
+			if t in self.tokenHash and t not in self.queryWeight.keys():
+				self.queryWeight[t]=1
+			elif t in self.tokenHash and t in self.queryWeight.keys():
+				self.queryWeight[t]+=1
+		return self.queryList
+
+	def retrieveQuery(self):
+		'''Assume retrieve top 5 results
+		'''
+		queryLength = 0.0
+		for x in self.queryWeight.values():
+			queryLength += x**2
+		similarity = []
+		for doc,val in self.docHash.items():
+			if sorted(list(set(self.queryList)-set(val))) == sorted(self.queryList):
+				similarity.append(0)
+			else:
+				docLength = 0.0
+				dot = 0.0
+				for y in self.weightHash[doc]:
+					if y != 0: docLength += y**2
+					for z in self.queryWeight.values():
+						dot += z * y
+				similarity.append(round((dot / (math.sqrt(docLength)*math.sqrt(queryLength))),2))
+		#top 5 retrieval
+		for i in range(4):
+			similarity = list(set(similarity) - set([0.0]))
+			top = similarity.index(sorted(similarity)[-i])
+			print(sorted(similarity)[-i])
+			print(top)
+			#print(str(self.rawdocHash.keys()))
+			print(str(i+1) + ": " + self.docHash.keys()[top])
+			print("Title: " + self.rawdocHash.values()[top]["title"][2:])
+			print("Author: " + self.rawdocHash.values()[top]["author"][2:])
 
