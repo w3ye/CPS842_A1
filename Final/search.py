@@ -12,7 +12,8 @@ ps = ""
 while ps.lower() != "n" and ps.lower() != "y":
 	ps = input("Would you like to use Porter Stemming Algorithm?(N/Y)")
 
-
+print("input >default< or nothing will automatically run eval part")
+print("query or term will be be automatically tokenized")
 required = input("What are you searching for?")
 while required != "ZZEND":
 	tester = invert.main(ps,st)
@@ -26,7 +27,9 @@ while required != "ZZEND":
 			if required in tester.postingHash.keys():
 				print("TF = " + str(tester.tokenHash[key]) +".")
 				for doc in content:
-					print("DocID: " + str(doc[0]) + ". DF = " + str(doc[1]))				
+					print("DocID: " + str(doc[0]) + ". DF = " + str(doc[1]))
+			else:
+				print("Term Not FOUND")
 		else:
 			tester.topKSimilarity(queryWeight)
 	else:
